@@ -2,61 +2,85 @@ const mongoose = require('mongoose');
 const Trip = require('../models/travlr'); // Register model
 const Model = mongoose.model('trips');
 
-// GET: /trips - lists all the trips
-// Regardless of outcome, response must include HTML status code
-// and JSON message to the requesting client
+// GET: /trips - lists all trips
 const tripsList = async (req, res) => {
-    const q = await Model
-        .find({}) // No filter, return all records
-        .exec();
-
-    // Uncomment the following line to show results of query
-    // on the console
-    // console.log(q);
+    const q = await Model.find({}).exec();
 
     if (!q || q.length === 0) {
-        // Database returned no data
-        return res
-            .status(404)
-            .json({ error: "No trips found" });
+        return res.status(404).json({ error: "No trips found" });
     } else {
-        // Return resulting trip list
-        return res
-            .status(200)
-            .json(q);
+        return res.status(200).json(q);
     }
-};
-
-module.exports = {
-    tripsList
 };
 
 // GET: /trips/:tripCode - lists a single trip
-// Regardless of outcome, response must include HTML status code
-// and JSON message to the requesting client
 const tripsFindByCode = async (req, res) => {
-    const q = await Model
-        .findOne({ 'code': req.params.tripCode }) // Return single record
-        .exec();
-
-    // Uncomment the following line to show results of query
-    // on the console
-    // console.log(q);
+    const q = await Model.findOne({ 'code': req.params.tripCode }).exec();
 
     if (!q) {
-        // Database returned no data
-        return res
-            .status(404)
-            .json({ error: "Trip not found" });
+        return res.status(404).json({ error: "Trip not found" });
     } else {
-        // Return resulting trip
-        return res
-            .status(200)
-            .json(q);
+        return res.status(200).json(q);
     }
 };
 
+// POST: /trips - Adds a new Trip
+const tripsAddTrip = async (req, res) => {
+    try {
+        const newTrip = new Trip({
+            code: req.body.code,
+            name: req.body.name,
+            length: req.body.length,
+            start: new Date(req.body.start.trim()), // Ensure proper Date conversion
+            resort: req.body.resort,
+            perPerson: req.body.perPerson,
+            image: req.body.image,
+            description: req.body.description
+        });
+
+        const q = await newTrip.save();
+        return res.status(201).json(q);
+    } catch (err) {
+        return res.status(400).json({ error: "Failed to add trip", details: err });
+    }
+};
+
+// ✅ PUT: /trips/:tripCode - Updates a Trip
+const tripsUpdateTrip = async (req, res) => {
+    try {
+        // Debugging logs
+        console.log("Updating Trip:", req.params);
+        console.log("Data Received:", req.body);
+
+        const q = await Model.findOneAndUpdate(
+            { code: req.params.tripCode }, // Find trip by tripCode
+            {
+                code: req.body.code,
+                name: req.body.name,
+                length: req.body.length,
+                start: new Date(req.body.start.trim()), // Ensure date is properly formatted
+                resort: req.body.resort,
+                perPerson: req.body.perPerson,
+                image: req.body.image,
+                description: req.body.description
+            },
+            { new: true } // Return the updated document
+        ).exec();
+
+        if (!q) {
+            return res.status(400).json({ error: "Trip not found or update failed" });
+        } else {
+            return res.status(200).json(q);
+        }
+    } catch (err) {
+        return res.status(400).json({ error: "Failed to update trip", details: err });
+    }
+};
+
+
 module.exports = {
     tripsList,
-    tripsFindByCode
+    tripsFindByCode,
+    tripsAddTrip,
+    tripsUpdateTrip  
 };
