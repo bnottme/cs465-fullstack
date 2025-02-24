@@ -6,11 +6,19 @@
       {{ trip.resort }}
     </h6>
     <p class="card-subtitle mt-3 mb-3 text-muted">
-      {{ trip.length }} only {{ trip.perPerson | currency:'USD':'symbol' }} per person
+      <span *ngIf="isValidPrice(); else invalidPrice">
+        {{ trip.perPerson | currency:'USD':'symbol' }} per person
+      </span>
+      <ng-template #invalidPrice>
+        <span>Price unavailable</span>
+      </ng-template>
     </p>
     <p class="card-text" [innerHTML]="trip.description"></p>
-    <div>
-      <button (click)="editTrip(trip)" class="btn btn-info">Edit Trip</button>
+
+
+    <div *ngIf="isLoggedIn()">
+      <button (click)="editTrip(trip)" class="btn btn-primary">Edit Trip</button>
+      <button (click)="addTrip()" class="btn btn-success">Add Trip</button>
     </div>
   </div>
 </div>

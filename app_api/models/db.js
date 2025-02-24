@@ -53,5 +53,6 @@ process.exit(0);
 // Make initial connection to DB
 connect();
 // Import Mongoose schema
+require('./user');
 require('./travlr');
 module.exports = mongoose;
