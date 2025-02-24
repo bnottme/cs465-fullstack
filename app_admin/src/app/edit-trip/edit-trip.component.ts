@@ -1,16 +1,17 @@
 import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from "@angular/forms";
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { CommonModule } from '@angular/common'; // 🔹 Fix: Import CommonModule for *ngIf
+import { ReactiveFormsModule } from '@angular/forms'; // 🔹 Fix: Import ReactiveFormsModule for form handling
 import { TripDataService } from '../services/trip-data.service';
 import { Trip } from '../models/trip';
 
 @Component({
   selector: 'app-edit-trip',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule], // 🔹 Fix: Ensure these modules are imported
   templateUrl: './edit-trip.component.html',
-  styleUrl: './edit-trip.component.css'
+  styleUrls: ['./edit-trip.component.css']
 })
 export class EditTripComponent implements OnInit {
 
@@ -29,17 +30,16 @@ export class EditTripComponent implements OnInit {
     // Retrieve stashed trip ID
     let tripCode = localStorage.getItem("tripCode");
     if (!tripCode) {
-      alert("Something wrong, couldn’t find where I stashed tripCode!");
-      this.router.navigate(['']);
+      alert("Something went wrong, couldn't find tripCode!");
+      this.router.navigate(['/']);
       return;
     }
 
     console.log('EditTripComponent::ngOnInit');
-    console.log('tripcode:' + tripCode);
+    console.log('Retrieved tripCode:', tripCode);
 
     this.editForm = this.formBuilder.group({
-      _id: [],
-      code: [tripCode, Validators.required],
+      code: [tripCode.trim(), Validators.required],
       name: ["", Validators.required],
       length: ["", Validators.required],
       start: ["", Validators.required],
@@ -49,16 +49,14 @@ export class EditTripComponent implements OnInit {
       description: ['', Validators.required]
     });
 
-    this.tripDataService.getTrip(tripCode)
+    this.tripDataService.getTrip(tripCode.trim())
       .subscribe({
-        next: (value: any) => {
+        next: (value: Trip) => {
           this.trip = value;
-          this.editForm.patchValue(value[0]); // Populate form with existing data
-          this.message = value ? 'Trip: ' + tripCode + ' retrieved' : 'No Trip Retrieved!';
-          console.log(this.message);
+          this.editForm.patchValue(value); // Populate form with existing data
         },
         error: (error: any) => {
-          console.log('Error: ' + error);
+          console.error('Error fetching trip:', error);
         }
       });
   }
@@ -69,17 +67,14 @@ export class EditTripComponent implements OnInit {
     if (this.editForm.valid) {
       this.tripDataService.updateTrip(this.editForm.value)
         .subscribe({
-          next: (value: any) => {
-            console.log(value);
-            this.router.navigate(['']);
+          next: () => {
+            this.router.navigate(['/']);
           },
           error: (error: any) => {
-            console.log('Error: ' + error);
           }
         });
     }
   }
 
-  // get the form short name to access the form fields
   get f() { return this.editForm.controls; }
 }

@@ -1,18 +1,34 @@
-const express = require('express'); // Express app
-const router = express.Router();    // Router logic
+const express = require('express');
+const router = express.Router();
+const passport = require('passport');
+const jwt = require('jsonwebtoken');
+const { expressjwt: jwtMiddleware } = require("express-jwt");
 
-// Import the trips controller
-const tripsController = require('../controllers/trips');
+const authController = require('../controllers/authentication');
+const tripsController = require('../controllers/trips'); 
 
-// Define route for trips
-router
-    .route('/trips')
-    .get(tripsController.tripsList)  
-    .post(tripsController.tripsAddTrip); 
-// GET and PUT methods for specific trip by tripCode
-router
-    .route('/trips/:tripCode')
-    .get(tripsController.tripsFindByCode)  
-    .put(tripsController.tripsUpdateTrip); 
+if (!authController || !tripsController) {
+    process.exit(1);
+}
+
+const auth = jwtMiddleware({
+    secret: process.env.JWT_SECRET,
+    algorithms: ['HS256'],
+    requestProperty: "user",
+    getToken: (req) => {
+        if (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
+            return req.headers.authorization.split(' ')[1]; 
+        }
+        return null;
+    }
+});
+
+router.get('/trips', tripsController.tripsList);
+router.get('/trips/:tripCode', tripsController.tripsFindByCode);
+router.post('/trips', auth, tripsController.tripsAddTrip);
+router.put('/trips/:tripCode', auth, tripsController.tripsUpdateTrip);
+
+router.post('/register', authController.register);
+router.post('/login', authController.login);
 
 module.exports = router;
